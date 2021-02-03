@@ -32,7 +32,9 @@
     "logoutDetail": "このセッションからサインアウト"
   },
   "errorContent": {
-    "failedGetRankOfDay": "選択した日付のランクを取得できません"
+    "failedGetRankOfDay": "選択した日付のランクを取得できません",
+    "needLogin": "継続するためにログインする必要があります",
+    "multiPageRequireLogin": "ページの内容を確認するにはログインする必要があります"
   },
   "memberIllustListTitle": "イラスト・マンガ",
   "shareTo": "シェア...",
@@ -51,11 +53,12 @@
   "weeklyRank": "ウィークリー",
   "monthlyRank": "マンスリー",
   "weekRookie": "ルーキー",
-  "weekOrginal": "オリジナル",
+  "weekOriginal": "オリジナル",
   "dayMale": "男子に人気",
   "dayFemale": "女子に人気",
   "view": "閲覧数",
-  "favourite": "ブックマーク",
+  "favourite": "好き",
+  "unfavourite": "嫌い",
   "like": "いいね！",
   "save": "保存する",
   "recentArtworks": "最近の作品",
@@ -72,6 +75,6 @@
   "unFollow": "フォローをやめる",
   "statusCode": {
     "100": "ログイン成功",
-    "103": "アカウント、パスワードの形式エラー"
+    "103": "アカウント、パスワードエラー"
   }
 }

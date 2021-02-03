@@ -264,7 +264,7 @@ export default {
     list: [],
     listIllust: [],
     listManga: [],
-    member: [null],
+    member: [],
     hidden: true,
     dialog: false,
     dialogId: null,
@@ -281,13 +281,14 @@ export default {
     share: false,
     shareId: 0,
     r18: false,
-    tab: 0
+    tab: 0,
+    session: localStorage.getItem('session')
   }),
   mounted () {
     if (localStorage.getItem('darkMode') === 'true') {
       this.$vuetify.theme.dark = true
     }
-    var _this = this
+    const _this = this
     if (localStorage.getItem('r18') !== null) {
       _this.r18 = localStorage.getItem('r18') === 'true'
     } else {
@@ -295,7 +296,7 @@ export default {
     }
     if (localStorage.getItem('session') !== null) {
       Axios
-        .post('https://pixiv-api.lxns.org/illustRecommended.php', 'session=' + localStorage.getItem('session'), undefined)
+        .post('https://pixiv-api.lxns.org/illustRecommended.php', 'session=' + _this.session)
         .then(res => {
           if (res.data.next_url !== null) {
             _this.pageStr = res.data.next_url
@@ -308,7 +309,7 @@ export default {
           }
         })
       Axios
-        .post('https://pixiv-api.lxns.org/illustRecommended.php', 'type=manga&session=' + localStorage.getItem('session'), undefined)
+        .post('https://pixiv-api.lxns.org/illustRecommended.php', 'type=manga&session=' + _this.session)
         .then(res => {
           if (res.data.next_url !== null) {
             _this.pageStrManga = res.data.next_url
@@ -319,20 +320,17 @@ export default {
             }
           }
         })
+    } else {
+      _this.toPath('/')
     }
     _this.handleResize()
   },
   created () {
-    var _this = this
+    const _this = this
     window.addEventListener('scroll', this.handleScroll)
     window.addEventListener('resize', this.handleResize)
     _this.loading = false
     _this.loaded = false
-  },
-  beforeDestroy () {
-    if (!this.$vuetify) return
-
-    this.$vuetify.theme.dark = this.initialDark
   },
   destroyed () {
     window.removeEventListener('resize', this.handleResize)
@@ -341,7 +339,7 @@ export default {
     if (localStorage.getItem('darkMode') === 'true') {
       this.$vuetify.theme.dark = true
     }
-    var _this = this
+    const _this = this
     if (localStorage.getItem('r18') !== null) {
       _this.r18 = localStorage.getItem('r18') === 'true'
     } else {
@@ -353,7 +351,7 @@ export default {
       if (this.$route.path !== '/user/discovery') {
         return
       }
-      var _this = this
+      const _this = this
       if (getScrollTop() + getWindowHeight() >= getScrollHeight() - 64 && _this.loading === false && _this.loaded === false) {
         if (_this.loading === false) {
           _this.loading = true
@@ -370,12 +368,12 @@ export default {
                 if (res.data.illusts.length !== 0) {
                   if (_this.tab === 0) {
                     _this.pageStr = res.data.next_url
-                    for (var i = 0; i < res.data.illusts.length; i++) {
+                    for (let i = 0; i < res.data.illusts.length; i++) {
                       _this.listIllust.push(res.data.illusts[i])
                     }
                   } else {
                     _this.pageStrManga = res.data.next_url
-                    for (var j = 0; j < res.data.illusts.length; j++) {
+                    for (let j = 0; j < res.data.illusts.length; j++) {
                       _this.listManga.push(res.data.illusts[j])
                     }
                   }
@@ -391,7 +389,7 @@ export default {
       _this.hidden = getScrollTop() !== 0
     },
     handleResize (event) {
-      var _this = this
+      const _this = this
       if (getWindowWidth() >= 1100) {
         _this.cardCol = 2
       } else if (getWindowWidth() >= 700) {
@@ -407,7 +405,7 @@ export default {
       _this.maxWidth = getWindowWidth()
     },
     toPath (path) {
-      var _this = this
+      const _this = this
       _this.dialog = false
       _this.pageId = 0
       if (this.$route.path !== path) {

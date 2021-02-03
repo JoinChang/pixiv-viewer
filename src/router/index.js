@@ -17,13 +17,11 @@ export default new Router({
     },
     {
       path: '/u/:id/',
-      name: 'Member',
-      component: () => import('@/components/Member')
+      redirect: { name: 'Member' }
     },
     {
       path: '/member/:id/',
-      name: 'Member',
-      component: () => import('@/components/Member')
+      redirect: { name: 'Member' }
     },
     {
       path: '/users/:id/',
@@ -32,8 +30,11 @@ export default new Router({
     },
     {
       path: '/i/:id/',
-      name: 'Illust',
-      component: () => import('@/components/Illust')
+      redirect: { name: 'Illust' }
+    },
+    {
+      path: '/illust/:id/',
+      redirect: { name: 'Illust' }
     },
     {
       path: '/artworks/:id/',

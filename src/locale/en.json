@@ -32,7 +32,9 @@
     "logoutDetail": "Sign out of this session"
   },
   "errorContent": {
-    "failedGetRankOfDay": "Failed to get rank of selected day"
+    "failedGetRankOfDay": "Failed to get rank of selected day",
+    "needLogin": "You need login to continue",
+    "multiPageRequireLogin": "You need login to view multi-page content"
   },
   "memberIllustListTitle": "Illust and Manga",
   "shareTo": "Share to...",
@@ -51,11 +53,12 @@
   "weeklyRank": "Weekly rank",
   "monthlyRank": "Monthly rank",
   "weekRookie": "Rookie",
-  "weekOrginal": "Orginal",
+  "weekOriginal": "Original",
   "dayMale": "For male",
   "dayFemale": "For female",
   "view": "View",
-  "favourite": "Favourite",
+  "favourite": "Add to favourite",
+  "unfavourite": "Remove from favourite",
   "like": "Like",
   "save": "Save",
   "recentArtworks": "Recent Artworks",

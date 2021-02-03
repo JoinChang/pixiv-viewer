@@ -139,9 +139,16 @@
     </v-list>
     <v-snackbar v-model="snackbar">
       {{ snackbarText }}
-      <v-btn text @click="snackbar = false" color="pink">
-        {{ this.$i18n.t('close') }}
-      </v-btn>
+      <template v-slot:action="{ attrs }">
+        <v-btn
+          color="pink"
+          text
+          v-bind="attrs"
+          @click="snackbar = false"
+        >
+          {{ $i18n.t('close') }}
+        </v-btn>
+      </template>
     </v-snackbar>
   </v-main>
 </template>
@@ -219,11 +226,11 @@ export default {
         .then(res => {
           if (res.data.status === 'success') {
             localStorage.setItem('session', res.data.session)
+            _this.session = res.data.session
+            this.$emit('getValue', {session: _this.session})
           }
-          _this.session = res.data.session
           _this.snackbarText = this.$i18n.t('statusCode.' + res.data.code)
           _this.snackbar = true
-          this.$emit('getValue', {session: _this.session})
         })
     },
     logout () {

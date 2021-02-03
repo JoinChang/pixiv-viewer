@@ -115,20 +115,12 @@
           >
             <span>Pixiv Viewer</span>
           </v-toolbar-title>
-          <v-spacer />
-          <v-btn icon>
-            <v-icon>mdi-apps</v-icon>
-          </v-btn>
-          <v-btn icon>
-            <v-icon>mdi-bell</v-icon>
-          </v-btn>
         </v-app-bar>
         <v-app-bar
           app
           elevate-on-scroll
           color="blue darken-3"
           dark
-          height="56px"
           :src="proxyUrl + headerSrc"
           v-else
         >
@@ -140,15 +132,14 @@
           </template>
           <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
           <v-toolbar-title
-            style="width: 300px"
+            style="width: 300px;"
             class="ml-0 pl-4"
           >
             <span>Pixiv Viewer</span>
           </v-toolbar-title>
         </v-app-bar>
       </div>
-      <div
-      >
+      <div>
         <keep-alive>
           <router-view v-if="$route.meta.keepAlive"
                        v-on:getValue="getValueFunc" />
@@ -170,7 +161,7 @@ export default {
     headerSrc: null,
     proxyUrl: 'https://lxns.org/proxy.php?type=pixiv&header=image/png&link=',
     session: localStorage.getItem('session'),
-    isDark: !!localStorage.getItem('darkMode') || false
+    isDark: localStorage.getItem('darkMode') === 'true'
   }),
   mounted () {
   },
@@ -195,16 +186,15 @@ export default {
       }
     },
     darkMode () {
+      localStorage.setItem('darkMode', (!this.isDark).toString())
       this.isDark = !this.isDark
-      this.$nextTick(() => {
-        localStorage.setItem('darkMode', (!this.isDark).toString())
-      })
     }
   },
   watch: {
     '$route' (to, from) {
       // console.log(to.path)
       // console.log(from.path)
+      this.headerSrc = null
       if (localStorage.getItem('session') !== null) {
         Axios
           .post('https://pixiv-api.lxns.org/refresh.php', 'session=' + localStorage.getItem('session'), undefined)
@@ -213,6 +203,8 @@ export default {
               localStorage.removeItem('session')
             }
           })
+      } else {
+        this.session = null
       }
     }
   }

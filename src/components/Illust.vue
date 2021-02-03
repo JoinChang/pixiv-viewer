@@ -9,8 +9,8 @@
             <v-carousel-item
               v-for="(page, t) in illustPage"
               :key="t"
-              :src="'https://lxns.org/proxy.php?type=pixiv&link=' + page.urls.original"
-              :lazy-src="'https://lxns.org/proxy.php?type=pixiv&link=' + (page.urls.regular ? page.urls.original : page.urls.regular)"
+              :src="'https://lxns.org/proxy.php?type=pixiv&link=' + page.image_urls.original"
+              :lazy-src="'https://lxns.org/proxy.php?type=pixiv&link=' + page.image_urls.large"
               reverse-transition="fade-transition"
               transition="fade-transition"
               gradient="to top, rgba(0,0,0,0), rgba(0,0,0,.1)"
@@ -57,7 +57,7 @@
         <v-overlay :value="overlay" v-if="illustPage.length > 1">
           <img
             :alt="illust.illustTitle + '_' + pageId"
-            :src="'https://lxns.org/proxy.php?type=pixiv&link=' + illustPage[pageId].urls.original"
+            :src="'https://lxns.org/proxy.php?type=pixiv&link=' + illustPage[pageId].image_urls.original"
             :style="'cursor: zoom-out; max-height: ' + maxHeight + 'px; max-width: ' + maxWidth + 'px; display: block;'"
             @click="overlay = false"
           />
@@ -98,16 +98,13 @@
           </v-tooltip>
           <v-tooltip bottom v-if="session !== null">
             <template v-slot:activator="{ on }">
-              <v-btn v-on="on" class="mx-2" tile icon v-if="isBookmarked === true"
-                     @click="bookmark(0)">
-                <v-icon>mdi-heart</v-icon>
-              </v-btn>
-              <v-btn v-on="on" class="mx-2" tile icon v-else
-                     @click="bookmark(1)">
-                <v-icon>mdi-heart-outline</v-icon>
+              <v-btn v-on="on" class="mx-2" tile icon
+                     @click="bookmark(isBookmarked ? 0 : 1)">
+                <v-icon :color="isBookmarked ? 'red' : ''">mdi-heart{{isBookmarked ? '' : '-outline'}}</v-icon>
               </v-btn>
             </template>
-            <span>{{ this.$i18n.t('favourite') }}</span>
+            <span v-if="isBookmarked === false">{{ this.$i18n.t('favourite') }}</span>
+            <span v-else>{{ this.$i18n.t('unfavourite') }}</span>
           </v-tooltip>
         </div>
         <v-divider />
@@ -240,9 +237,16 @@
     </div>
     <v-snackbar v-model="snackbar">
       {{ snackbarText }}
-      <v-btn text @click="snackbar = false" color="pink">
-        {{ this.$i18n.t('close') }}
-      </v-btn>
+      <template v-slot:action="{ attrs }">
+        <v-btn
+          color="pink"
+          text
+          v-bind="attrs"
+          @click="snackbar = false"
+        >
+          {{ $i18n.t('close') }}
+        </v-btn>
+      </template>
     </v-snackbar>
   </v-main>
 </template>
@@ -253,7 +257,6 @@ import {getWindowHeight, getWindowWidth} from '../screen'
 
 export default {
   name: 'Illusts',
-  inject: ['reload'],
   props: {
     source: String,
     attrs: {
@@ -290,8 +293,7 @@ export default {
     snackbarText: null,
     session: localStorage.getItem('session'),
     isBookmarked: false,
-    isFollowed: false,
-    activeIllustId: 0
+    isFollowed: false
   }),
   mounted () {
     const _this = this
@@ -300,7 +302,6 @@ export default {
     } else {
       localStorage.setItem('r18', 'false')
     }
-    _this.activeIllustId = _this.artworkId
     Axios
       .post('https://pixiv-api.lxns.org/illustDetail.php', 'illust_id=' + _this.artworkId, undefined)
       .then(res => {
@@ -309,16 +310,11 @@ export default {
           .post('https://pixiv-api.lxns.org/userDetail.php', 'user_id=' + _this.illust.userId, undefined)
           .then(res => {
             _this.member = res.data.body
-            if (_this.illust.pageCount > 1) {
-              Axios
-                .post('https://pixiv-api.lxns.org/illustDetail.php', 'type=page&illust_id=' + _this.artworkId, undefined)
-                .then(res => {
-                  _this.illustPage = res.data.body
-                  _this.loaded = true
-                })
-            } else {
-              _this.loaded = true
+            if (_this.illust.pageCount > 1 && _this.session === null) {
+              _this.snackbarText = this.$i18n.t('errorContent.multiPageRequireLogin')
+              _this.snackbar = true
             }
+            _this.loaded = true
           })
         for (let i in _this.illust.userIllusts) {
           if (_this.illust.userIllusts[i] !== null) {
@@ -335,10 +331,11 @@ export default {
     _this.loading = false
     _this.loaded = false
     // localStorage 貌似在 created () 才会初始化
-    if (localStorage.getItem('session') !== null) { // 是否收藏
+    if (_this.session !== null) { // 是否收藏
       Axios
         .post('https://pixiv-api.lxns.org/illustDetail.php', 'session=' + localStorage.getItem('session') + '&illust_id=' + _this.artworkId, undefined)
         .then(res => {
+          _this.illustPage = res.data.illust.meta_pages
           _this.isBookmarked = res.data.illust.is_bookmarked === true
           _this.isFollowed = res.data.illust.user.is_followed === true
         })
@@ -347,8 +344,6 @@ export default {
   destroyed () {
     window.removeEventListener('resize', this.handleResize)
     window.removeEventListener('popstate', this.illustListToggle, false)
-  },
-  activated () {
   },
   methods: {
     handleResize (event) {
@@ -407,15 +402,9 @@ export default {
         .then(res => {
           _this.illust = res.data.body
           if (_this.illust.pageCount > 1) {
-            Axios
-              .post('https://pixiv-api.lxns.org/illustDetail.php', 'type=page&illust_id=' + _this.artworkId, undefined)
-              .then(res => {
-                _this.illustPage = res.data.body
-                _this.loaded = true
-              })
-          } else {
-            _this.loaded = true
+            _this.isMultiPage = true
           }
+          _this.loaded = true
           _this.illustList = [null]
           for (let i in _this.illust.userIllusts) {
             if (_this.illust.userIllusts[i] !== null) {
@@ -428,49 +417,39 @@ export default {
     },
     bookmark (type = 1) {
       let _this = this
+      let reqUrl
       if (type === 0) { // 删除收藏
-        Axios
-          .post('https://pixiv-api.lxns.org/illustBookmarkDelete.php', 'session=' + localStorage.getItem('session') + '&illust_id=' + _this.artworkId, undefined)
-          .then(res => {
-            if (JSON.stringify(res.data) === '{}') {
-              _this.isBookmarked = false
-            }
-          })
+        reqUrl = 'https://pixiv-api.lxns.org/illustBookmarkDelete.php'
       } else {
-        Axios
-          .post('https://pixiv-api.lxns.org/illustBookmarkAdd.php', 'session=' + localStorage.getItem('session') + '&illust_id=' + _this.artworkId, undefined)
-          .then(res => {
-            if (JSON.stringify(res.data) === '{}') {
-              _this.isBookmarked = true
-            }
-          })
+        reqUrl = 'https://pixiv-api.lxns.org/illustBookmarkAdd.php'
       }
+      Axios
+        .post(reqUrl, 'session=' + localStorage.getItem('session') + '&illust_id=' + _this.artworkId)
+        .then(res => {
+          if (JSON.stringify(res.data) === '{}') {
+            _this.isBookmarked = true
+          }
+        })
     },
     follow (type = 1) {
       let _this = this
+      let reqUrl
       if (type === 0) { // 取消关注
-        Axios
-          .post('https://pixiv-api.lxns.org/private/meFavouriteUsersUnfollow.php', 'session=' + localStorage.getItem('session') + '&user_id=' + _this.illust.userId, undefined)
-          .then(res => {
-            if (res.data.status === 'success') {
-              _this.isFollowed = false
-            }
-          })
+        reqUrl = 'https://pixiv-api.lxns.org/private/meFavouriteUsersUnfollow.php'
       } else {
-        Axios
-          .post('https://pixiv-api.lxns.org/private/meFavouriteUsersFollow.php', 'session=' + localStorage.getItem('session') + '&user_id=' + _this.illust.userId, undefined)
-          .then(res => {
-            if (res.data.status === 'success') {
-              _this.isFollowed = true
-            }
-          })
+        reqUrl = 'https://pixiv-api.lxns.org/private/meFavouriteUsersFollow.php'
       }
+      Axios
+        .post(reqUrl, 'session=' + localStorage.getItem('session') + '&user_id=' + _this.illust.userId)
+        .then(res => {
+          if (res.data.status === 'success') {
+            _this.isFollowed = true
+          }
+        })
     }
   },
   watch: {
     '$route' (to, from) {
-      // console.log(to.path)
-      // console.log(from.path)
       this.illustListToggle(this.$route.params.id)
     }
   }

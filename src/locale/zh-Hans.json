@@ -32,7 +32,9 @@
     "logoutDetail": "将该会话的账号登出"
   },
   "errorContent": {
-    "failedGetRankOfDay": "没有获取到所选日期的排行"
+    "failedGetRankOfDay": "没有获取到所选日期的排行",
+    "needLogin": "您需要登录以使用该功能",
+    "multiPageRequireLogin": "您需要登录才能查看分页内容"
   },
   "memberIllustListTitle": "插画·漫画",
   "shareTo": "分享到...",
@@ -51,11 +53,12 @@
   "weeklyRank": "周榜",
   "monthlyRank": "月榜",
   "weekRookie": "新人",
-  "weekOrginal": "原创",
+  "weekOriginal": "原创",
   "dayMale": "男性向",
   "dayFemale": "女性向",
   "view": "浏览量",
   "favourite": "收藏",
+  "unfavourite": "取消收藏",
   "like": "喜欢",
   "save": "保存到本地",
   "recentArtworks": "最近作品",
@@ -72,6 +75,6 @@
   "unFollow": "取消关注",
   "statusCode": {
     "100": "登录成功",
-    "103": "账号或密码格式错误"
+    "103": "账号或密码错误"
   }
 }

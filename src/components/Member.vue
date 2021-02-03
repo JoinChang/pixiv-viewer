@@ -1,6 +1,6 @@
 <template>
-  <v-main fluid style="padding: 70px 12px 12px 12px">
-    <v-card flat v-if="member.body">
+  <v-main fluid style="padding: 56px 0 0 0;">
+    <v-card flat v-if="member.body" style="padding-top: 24px;">
       <v-list-item two-line>
         <v-list-item-avatar size="96" class="grey lighten-2">
           <v-img :src="'https://lxns.org/proxy.php?type=pixiv&link=' + member.body.imageBig" />
@@ -23,13 +23,11 @@
       </v-chip>
       <v-card-text style="white-space: pre-wrap;" v-if="member.body.comment">{{member.body.comment}}</v-card-text>
     </v-card>
-    <div v-if="member.user">
-      <v-divider style="margin: 12px 0 20px 0;" />
-      <p class="headline">{{ this.$i18n.t('memberIllustListTitle') }}</p>
-    </div>
+    <v-toolbar flat v-if="member.body">
+      <v-toolbar-title>{{ this.$i18n.t('memberIllustListTitle') }}</v-toolbar-title>
+    </v-toolbar>
     <v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition" v-if="dialogId !== null && list[dialogId] !== null">
-      <v-card
-        style="overflow-x: hidden;">
+      <v-card style="overflow-x: hidden;">
         <v-toolbar dark
                    color="primary"
                    style="position: absolute; width: 100%; z-index: 1; background-color: rgba(0,0,0,0) !important; box-shadow: none;">
@@ -111,7 +109,7 @@
             />
           </v-overlay>
         </div>
-        <v-list two-line subheader>
+        <v-list two-line>
           <v-card-title>{{list[dialogId].title}}</v-card-title>
           <v-card-subtitle v-html="list[dialogId].caption">{{list[dialogId].caption}}</v-card-subtitle>
           <div style="margin-left: 8px;">
@@ -191,7 +189,7 @@
         </v-list-item>
       </v-list>
     </v-bottom-sheet>
-    <v-row dense>
+    <v-row dense style="padding: 8px; margin: 0;" v-if="list.length > 0">
       <v-col class="flex-grow-0 flex-shrink-0"
              v-for="(item, i) in this.list"
              v-if="r18 === true || list[i] !== null && (r18 === false && JSON.stringify(list[i].tags).search(/R-18(|G)/) < 0)"
@@ -204,6 +202,17 @@
             gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
             height="200px"
           >
+            <v-chip
+              class="ma-2"
+              label
+              v-if="list[i].meta_pages.length > 1"
+              style="background: rgba(0,0,0,.5); color: white; position: absolute; top: 0; right: 0;"
+            >
+              <v-icon left>
+                mdi-image-multiple
+              </v-icon>
+              {{list[i].meta_pages.length}}
+            </v-chip>
             <v-card-title v-text="item.title" />
           </v-img>
           <v-card-actions>
@@ -237,7 +246,13 @@
         </v-card>
       </v-col>
     </v-row>
-    <div class="text-center" style="margin-top: 12px;" v-if="!loaded">
+    <v-alert border="right"
+             colored-border
+             type="error"
+             elevation="2"
+             style="margin: 10px 8px;"
+             v-if="errorContent !== null">{{errorContent}}</v-alert>
+    <div class="text-center" style="margin: 12px;" v-if="!loaded">
       <v-progress-circular
         indeterminate
         color="primary"
@@ -279,8 +294,8 @@ export default {
     page: 1,
     loading: true,
     loaded: false,
-    list: [null],
-    member: [null],
+    list: [],
+    member: [],
     hidden: true,
     dialog: false,
     dialogId: null,
@@ -296,6 +311,7 @@ export default {
     memberId: vm.$route.params.id,
     share: false,
     shareId: 0,
+    session: localStorage.getItem('session'),
     r18: false
   }),
   mounted () {
@@ -309,12 +325,19 @@ export default {
       .post('https://pixiv-api.lxns.org/userDetail.php', 'user_id=' + _this.memberId)
       .then(res => {
         _this.member = res.data
-        this.$emit('getValue', {headerSrc: _this.member.body.imageBig})
+        if (_this.member.body.background) {
+          this.$emit('getValue', {headerSrc: _this.member.body.background.url})
+        }
       })
     Axios
-      .post('https://pixiv-api.lxns.org/userIllusts.php', 'user_id=' + _this.memberId)
+      .post('https://pixiv-api.lxns.org/userIllusts.php', 'user_id=' + _this.memberId + '&session=' + _this.session)
       .then(res => {
-        _this.list = res.data.illusts
+        if (res.data.code === -1) {
+          _this.errorContent = this.$i18n.t('errorContent.needLogin')
+          _this.loaded = true
+        } else {
+          _this.list = res.data.illusts
+        }
       })
     _this.handleResize()
   },
@@ -330,26 +353,27 @@ export default {
   },
   methods: {
     handleScroll (event) {
-      if (this.$route.path.replace(/\d+/, '') !== '/member/' && this.$route.path.replace(/\d+/, '') !== '/users/') {
+      if (this.$route.path.replace(/\d+/, '') !== '/users/') {
         return
       }
       const _this = this
       if (getScrollTop() + getWindowHeight() >= getScrollHeight() - 64 && _this.loading === false && _this.loaded === false) {
         _this.loading = true
         _this.page += 1
-        let reqUrl = 'https://api.imjad.cn/pixiv/v2/?type=member_illust&id=' + _this.memberId + '&page=' + _this.page
+        let reqUrl = 'https://pixiv-api.lxns.org/userIllusts.php'
+        let postContent = 'user_id=' + _this.memberId + '&session=' + _this.session + '&page=' + _this.page
         Axios
-          .get(reqUrl)
+          .post(reqUrl, postContent)
           .then(res => {
             if (res.data.illusts.length !== 0) {
-              for (var i = 0; i < res.data.illusts.length; i++) {
+              for (let i = 0; i < res.data.illusts.length; i++) {
                 _this.list.push(res.data.illusts[i])
               }
             } else {
               _this.loaded = true
             }
+            _this.loading = false
           })
-        _this.loading = false
       }
       _this.hidden = getScrollTop() !== 0
     },

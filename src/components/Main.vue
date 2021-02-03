@@ -11,7 +11,7 @@
       <v-toolbar flat height="0px">
         <v-spacer />
         <v-btn absolute icon text style="float: right; right: 48px; top: -48px;"
-               @click="searchTerm" :disabled="searchContent ? false : true">
+               @click="searchTerm" :disabled="!searchContent">
           <v-icon>mdi-magnify</v-icon>
         </v-btn>
         <v-btn absolute icon text style="float: right; right: 12px; top: -48px;"
@@ -345,16 +345,22 @@ export default {
     cardCol: 1,
     share: false,
     shareId: 0,
+    session: localStorage.getItem('session'),
     r18: false
   }),
   mounted () {
     const _this = this
     Axios
-      .get('https://api.imjad.cn/pixiv/v2/?type=rank&page=1&date=' + _this.date + '&mode=day')
+      .post('https://pixiv-api.lxns.org/illustRanking.php', 'page=1&session=' + _this.session + '&date=' + _this.date + '&mode=day')
       .then(res => {
         _this.list = res.data.illusts
-        if (_this.list.length === 0) {
-          _this.errorContent = this.$i18n.t('errorContent.failedGetRankOfDay')
+        if (_this.list) {
+          if (_this.list.length === 0) {
+            _this.errorContent = this.$i18n.t('errorContent.failedGetRankOfDay')
+            _this.loaded = true
+          }
+        } else if (res.data.code === -1) {
+          _this.errorContent = this.$i18n.t('errorContent.needLogin')
           _this.loaded = true
         }
       })
@@ -362,7 +368,7 @@ export default {
     _this.handleResize()
   },
   created () {
-    var _this = this
+    const _this = this
     window.addEventListener('scroll', this.handleScroll)
     window.addEventListener('resize', this.handleResize)
     _this.page = 1
@@ -392,13 +398,16 @@ export default {
         _this.loading = true
         _this.page += 1
         let reqUrl
-        if (_this.searchUrl !== null) {
-          reqUrl = _this.searchUrl + _this.page
+        let postContent
+        if (_this.searchContent !== null) {
+          reqUrl = 'https://pixiv-api.lxns.org/searchIllust.php'
+          postContent = 'word=' + _this.searchContent + '&session=' + _this.session + '&sort=' + _this.dateSort + '&search_target=' + _this.searchType + '&page=' + _this.page
         } else {
-          reqUrl = 'https://api.imjad.cn/pixiv/v2/?type=rank&page=' + _this.page + '&date=' + _this.date + '&mode=day'
+          reqUrl = 'https://pixiv-api.lxns.org/illustRanking.php'
+          postContent = 'page=' + _this.page + '&session=' + _this.session + '&date=' + _this.date + '&mode=day'
         }
         Axios
-          .get(reqUrl)
+          .post(reqUrl, postContent)
           .then(res => {
             if (res.data.illusts.length !== 0) {
               for (var i = 0; i < res.data.illusts.length; i++) {
@@ -413,7 +422,7 @@ export default {
       _this.hidden = getScrollTop() !== 0
     },
     handleResize (event) {
-      var _this = this
+      const _this = this
       if (getWindowWidth() >= 1100) {
         _this.cardCol = 2
       } else if (getWindowWidth() >= 700) {
@@ -429,16 +438,16 @@ export default {
       _this.maxWidth = getWindowWidth()
     },
     clearContent () {
-      var _this = this
+      const _this = this
       _this.errorContent = null
       _this.loaded = false
       _this.list = []
     },
     getRankFromDate () {
-      var _this = this
+      const _this = this
       _this.clearContent()
       Axios
-        .get('https://api.imjad.cn/pixiv/v2/?type=rank&page=1&date=' + _this.date + '&mode=day')
+        .post('https://pixiv-api.lxns.org/illustRanking.php', 'page=' + _this.page + '&session=' + _this.session + '&date=' + _this.date + '&mode=day')
         .then(res => {
           _this.list = res.data.illusts
           if (_this.list.length === 0 || _this.list.illusts === []) {
@@ -448,17 +457,16 @@ export default {
         })
     },
     searchTerm () {
-      var _this = this
+      const _this = this
       _this.clearContent()
-      _this.searchUrl = 'https://api.imjad.cn/pixiv/v2/?type=search&word=' + _this.searchContent + '&order=' + _this.dateSort + '&mode=' + _this.searchType + '&page='
       Axios
-        .get(_this.searchUrl + '1')
+        .post('https://pixiv-api.lxns.org/searchIllust.php', 'word=' + _this.searchContent + '&session=' + _this.session + '&sort=' + _this.dateSort + '&search_target=' + _this.searchType + '&page=1')
         .then(res => {
           _this.list = res.data.illusts
         })
     },
     filterExpand () {
-      var _this = this
+      const _this = this
       _this.filter = !_this.filter
       if (_this.filter === false) {
         _this.filterPanel = []
@@ -467,7 +475,7 @@ export default {
       }
     },
     toPath (path) {
-      var _this = this
+      const _this = this
       _this.dialog = false
       _this.pageId = 0
       if (this.$route.path !== path) {
